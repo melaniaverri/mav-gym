@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.log
+.DS_Store
+
+# Local Netlify folder
+.netlify
+
+# Personal/working files (non pubblicare)
+LAVORO.md
+testo.txt
+CLAUDE.md
+
+# Build artifacts / TS cache
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js

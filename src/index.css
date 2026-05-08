@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* MAV GYM — Boutique premium light mode
+     Brand: cream warm bg + rosso energetico + near-black come secondary */
+  :root {
+    --background: 38 30% 97%;            /* #FAF8F4 cream caldo */
+    --foreground: 222 47% 11%;            /* #0F172A near-black */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --primary: 354 78% 56%;               /* #E63946 rosso energetico */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 47% 11%;             /* near-black come "secondary brand" */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 38 18% 93%;
+    --muted-foreground: 215 16% 47%;      /* #64748B slate medio */
+
+    --accent: 354 70% 62%;                /* rosso più chiaro per glow/radial */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 38 15% 86%;                 /* #E7E2D9 warm beige */
+    --input: 38 18% 93%;
+    --ring: 354 78% 56%;
+
+    /* Compat: brand-blue → ridiretto al near-black secondary */
+    --brand-blue: 222 47% 11%;
+    --brand-blue-foreground: 0 0% 100%;
+    --brand-blue-soft: 222 30% 30%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(354 78% 56%) 0%, hsl(354 72% 48%) 100%);
+    --gradient-blue: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 40% 20%) 100%);
+    --gradient-yb: linear-gradient(135deg, hsl(354 78% 56%) 0%, hsl(222 47% 11%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(38 30% 97%) 100%);
+    --shadow-glow: 0 10px 40px -10px hsl(354 78% 56% / 0.4), 0 0 0 1px hsl(354 78% 56% / 0.15);
+    --shadow-glow-blue: 0 10px 40px -10px hsl(222 47% 11% / 0.25), 0 0 0 1px hsl(222 47% 11% / 0.08);
+    --shadow-card: 0 8px 24px -8px rgba(15, 23, 42, 0.1), 0 0 0 1px rgba(15, 23, 42, 0.04);
+    --font-heading: 'Clash Display', system-ui, sans-serif;
+
+    /* Theme A structure tokens */
+    --th-h2-primary: hsl(var(--primary));
+    --th-h2-eyebrow: hsl(var(--foreground));
+    --th-hero-emphasis: hsl(var(--primary));
+    --th-stat-icon: hsl(var(--primary));
+    --th-card-icon: hsl(var(--primary));
+    --th-card-hover: hsl(var(--primary) / 0.55);
+    --th-card-name: hsl(0 0% 100%);                       /* bianco sul gradient scuro della foto */
+    --th-badge-bg: hsl(var(--foreground) / 0.85);         /* badge scuro su foto */
+    --th-badge-fg: hsl(0 0% 100%);
+    --th-badge-bd: hsl(var(--foreground));
+    --th-instructor-badge-bg: hsl(var(--primary));
+    --th-instructor-badge-fg: hsl(var(--primary-foreground));
+    --th-cta-secondary-bg: hsl(var(--secondary));
+    --th-cta-secondary-fg: hsl(var(--secondary-foreground));
+    --th-cta-secondary-shadow: var(--shadow-glow-blue);
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  html {
+    background-color: hsl(var(--background));
+    overflow-x: hidden;
+  }
+  body {
+    background-color: transparent;
+    color: hsl(var(--foreground));
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* RDP overrides: calendar inherits theme tokens */
+.rdp {
+  --rdp-cell-size: 36px;
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-background-color: hsl(var(--muted));
+  margin: 0;
+}
