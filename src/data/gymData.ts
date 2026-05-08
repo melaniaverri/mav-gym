@@ -39,12 +39,13 @@ export const istruttori: Istruttore[] = [
 ];
 
 // Schedulazione settimanale per ogni corso (giorni della settimana 0=Dom, 1=Lun, ... 6=Sab)
-const schedules: Array<{ id_corso: number; id_istruttore: number; days: number[]; orario: string; capienza: number }> = [
-  { id_corso: 1, id_istruttore: 1, days: [2, 5],    orario: '18:00', capienza: 8  }, // Powerlifting: Mar, Ven
-  { id_corso: 2, id_istruttore: 2, days: [1, 3, 5], orario: '19:00', capienza: 15 }, // Pilates: Lun, Mer, Ven
-  { id_corso: 3, id_istruttore: 3, days: [2, 4, 6], orario: '18:30', capienza: 25 }, // Zumba: Mar, Gio, Sab
-  { id_corso: 4, id_istruttore: 4, days: [1, 4],    orario: '20:00', capienza: 12 }, // Nuoto: Lun, Gio
-  { id_corso: 5, id_istruttore: 5, days: [1, 3, 6], orario: '09:30', capienza: 14 }, // Bodybuilding: Lun, Mer, Sab
+// Ogni corso ha più fasce orarie per giorno
+const schedules: Array<{ id_corso: number; id_istruttore: number; days: number[]; orari: string[]; capienza: number }> = [
+  { id_corso: 1, id_istruttore: 1, days: [2, 5],    orari: ['10:00', '18:00'],          capienza: 8  }, // Powerlifting: Mar, Ven
+  { id_corso: 2, id_istruttore: 2, days: [1, 3, 5], orari: ['09:00', '12:00', '19:00'], capienza: 15 }, // Pilates: Lun, Mer, Ven
+  { id_corso: 3, id_istruttore: 3, days: [2, 4, 6], orari: ['18:30', '20:00'],          capienza: 25 }, // Zumba: Mar, Gio, Sab
+  { id_corso: 4, id_istruttore: 4, days: [1, 4],    orari: ['11:00', '20:00'],          capienza: 12 }, // Nuoto: Lun, Gio
+  { id_corso: 5, id_istruttore: 5, days: [1, 3, 6], orari: ['09:30', '17:00'],          capienza: 14 }, // Bodybuilding: Lun, Mer, Sab
 ];
 
 function pad(n: number) { return n < 10 ? '0' + n : '' + n; }
@@ -58,17 +59,19 @@ function generateCalendario(): CalendarioEntry[] {
     const dow = d.getDay();
     for (const s of schedules) {
       if (!s.days.includes(dow)) continue;
-      // Posti disponibili deterministici e variabili: alcune lezioni piene, altre con molti posti
-      const seed = (s.id_corso * 31 + d.getDate() * 17 + d.getMonth() * 7 + d.getFullYear()) % 97;
-      const posti = seed < 7 ? 0 : Math.max(1, ((seed * 13) % s.capienza) + 1);
-      entries.push({
-        id: id++,
-        id_corso: s.id_corso,
-        id_istruttore: s.id_istruttore,
-        giorno: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
-        orario: s.orario,
-        posti_disponibili: posti,
-      });
+      for (const orario of s.orari) {
+        const orarioSeed = orario.split(':').map(Number).reduce((a, b) => a * 60 + b, 0);
+        const seed = (s.id_corso * 31 + d.getDate() * 17 + d.getMonth() * 7 + d.getFullYear() + orarioSeed) % 97;
+        const posti = seed < 7 ? 0 : Math.max(1, ((seed * 13) % s.capienza) + 1);
+        entries.push({
+          id: id++,
+          id_corso: s.id_corso,
+          id_istruttore: s.id_istruttore,
+          giorno: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+          orario,
+          posti_disponibili: posti,
+        });
+      }
     }
   }
   return entries;

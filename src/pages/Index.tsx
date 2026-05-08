@@ -76,9 +76,11 @@ function getCourseDates(corsoId: number) {
     .map(e => parseLocalDate(e.giorno));
 }
 
-function getEntryByDate(corsoId: number, date: Date) {
+function getEntriesByDate(corsoId: number, date: Date) {
   const dateStr = formatLocalDate(date);
-  return calendario.find(e => e.id_corso === corsoId && e.giorno === dateStr);
+  return calendario
+    .filter(e => e.id_corso === corsoId && e.giorno === dateStr)
+    .sort((a, b) => a.orario.localeCompare(b.orario));
 }
 
 interface Booking {
@@ -105,13 +107,17 @@ function BookingModal({ entry, onClose, onConfirm }: {
   const availableDates = getCourseDates(entry.id_corso);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(parseLocalDate(entry.giorno));
   const [selectedEntry, setSelectedEntry] = useState(entry);
+  const [availableTimes, setAvailableTimes] = useState<Array<CalendarioEntry & { posti: number }>>([]);
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (selectedDate) {
-      const found = getEntryByDate(entry.id_corso, selectedDate);
-      if (found) setSelectedEntry({ ...found, posti: found.posti_disponibili });
+      const found = getEntriesByDate(entry.id_corso, selectedDate)
+        .map(e => ({ ...e, posti: e.posti_disponibili }));
+      setAvailableTimes(found);
+      const firstAvailable = found.find(e => e.posti > 0) ?? found[0];
+      if (firstAvailable) setSelectedEntry(firstAvailable);
     }
   }, [selectedDate, entry.id_corso]);
 
@@ -175,9 +181,40 @@ function BookingModal({ entry, onClose, onConfirm }: {
         </div>
 
         {selectedDate && (
-          <div className="mb-4 p-3 rounded-lg bg-muted border border-border text-sm text-foreground/85 space-y-1">
+          <div className="mb-4 p-3 rounded-lg bg-muted border border-border text-sm text-foreground/85 space-y-2">
             <p><strong className="text-foreground">Data:</strong> {formatDate(selectedDate.toISOString())}</p>
-            <p><strong className="text-foreground">Orario:</strong> {selectedEntry.orario}</p>
+
+            {availableTimes.length > 1 ? (
+              <div>
+                <p className="font-medium text-foreground mb-1.5">Scegli un orario:</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableTimes.map(t => {
+                    const isSelected = selectedEntry.id === t.id;
+                    const sold = t.posti === 0;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => !sold && setSelectedEntry(t)}
+                        disabled={sold}
+                        className={cn(
+                          'px-3 py-1.5 rounded-md text-sm font-medium transition-all',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground shadow-md'
+                            : 'bg-background border border-border hover:border-primary/50 text-foreground',
+                          sold && 'opacity-40 cursor-not-allowed line-through'
+                        )}
+                      >
+                        {t.orario}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p><strong className="text-foreground">Orario:</strong> {selectedEntry.orario}</p>
+            )}
+
             <p><strong className="text-foreground">Posti disponibili:</strong> {selectedEntry.posti}</p>
           </div>
         )}
