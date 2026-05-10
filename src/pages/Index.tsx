@@ -17,6 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { smoothScrollToElement } from '@/lib/lenis';
+import { sendWelcomeEmail } from '@/lib/welcomeEmail';
 import { toast } from 'sonner';
 // Gallery photos (Unsplash, license-free) — 3 per categoria per il lightbox
 import salaPesi from '@/assets/gallery/sala-pesi.jpg';
@@ -949,20 +950,41 @@ function SignupModal({ piano, onClose }: { piano: Piano; onClose: () => void }) 
       return;
     }
     setSending(true);
-    const { error } = await supabase.from('iscrizioni').insert({
+    const iscrizione = {
       nome: nome.trim(),
       cognome: cognome.trim(),
       email: email.trim().toLowerCase(),
       telefono: telefono.trim() || null,
       piano: piano.id as 'flex' | 'plus' | 'elite',
       prezzo_mensile: piano.prezzoMensile,
-    });
-    setSending(false);
+    };
+
+    const { error } = await supabase.from('iscrizioni').insert(iscrizione);
     if (error) {
+      setSending(false);
       toast.error(`Errore nell'invio: ${error.message}`);
       return;
     }
-    toast.success(`Iscrizione al piano ${piano.nome} registrata! Ti contatteremo a breve a ${email}`, { duration: 5000 });
+
+    try {
+      await sendWelcomeEmail({
+        nome: iscrizione.nome,
+        cognome: iscrizione.cognome,
+        email: iscrizione.email,
+        telefono: iscrizione.telefono,
+        piano: iscrizione.piano,
+        pianoNome: piano.nome,
+        prezzoMensile: piano.prezzoMensile,
+        fatturazione: piano.fatturazione,
+      });
+      toast.success(`Iscrizione al piano ${piano.nome} registrata! Email di conferma inviata a ${iscrizione.email}`, { duration: 5000 });
+    } catch (emailError) {
+      console.error('Welcome email non inviata', emailError);
+      toast.success(`Iscrizione al piano ${piano.nome} registrata! Ti contatteremo a breve a ${iscrizione.email}`, { duration: 6000 });
+    } finally {
+      setSending(false);
+    }
+
     onClose();
   };
 
