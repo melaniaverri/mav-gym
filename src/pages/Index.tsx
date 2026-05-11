@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { smoothScrollToElement } from '@/lib/lenis';
 import { sendWelcomeEmail } from '@/lib/welcomeEmail';
+import { sendBookingEmail } from '@/lib/bookingEmail';
 import { toast } from 'sonner';
 // Gallery photos (Unsplash, license-free) — 3 per categoria per il lightbox
 import salaPesi from '@/assets/gallery/sala-pesi.jpg';
@@ -102,7 +103,7 @@ interface UserProfile {
 function BookingModal({ entry, onClose, onConfirm }: {
   entry: CalendarioEntry & { posti: number };
   onClose: () => void;
-  onConfirm: (entryId: number, email: string) => void;
+  onConfirm: (entryId: number, email: string) => Promise<void>;
 }) {
   const corso = getCorsoById(entry.id_corso);
   const availableDates = getCourseDates(entry.id_corso);
@@ -127,15 +128,19 @@ function BookingModal({ entry, onClose, onConfirm }: {
   };
 
   const handleConfirm = async () => {
-    if (!email || !email.includes('@')) {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
       toast.error('Inserisci un\'email valida');
       return;
     }
     setSending(true);
-    // Simulate async booking
-    await new Promise(r => setTimeout(r, 800));
-    onConfirm(selectedEntry.id, email);
-    setSending(false);
+    try {
+      await onConfirm(selectedEntry.id, normalizedEmail);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Email prenotazione non inviata');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -1524,13 +1529,29 @@ export default function Index() {
     });
   };
 
-  const handleBookConfirm = (entryId: number, email: string) => {
+  const handleBookConfirm = async (entryId: number, email: string) => {
     const entry = entries.find(e => e.id === entryId);
-    if (!entry || entry.posti <= 0) return;
-
-    setEntries(prev => prev.map(e => e.id === entryId ? { ...e, posti: e.posti - 1 } : e));
+    if (!entry || entry.posti <= 0) {
+      throw new Error('Questa lezione non ha piu posti disponibili');
+    }
 
     const corso = getCorsoById(entry.id_corso);
+    const istruttore = getIstruttoreById(entry.id_istruttore);
+
+    if (!corso) {
+      throw new Error('Corso non trovato');
+    }
+
+    await sendBookingEmail({
+      email,
+      courseName: corso.nome_corso,
+      instructorName: istruttore?.nome_istruttore || 'Team MAV GYM',
+      date: entry.giorno,
+      time: entry.orario,
+      durationMinutes: corso.durata_minuti,
+    });
+
+    setEntries(prev => prev.map(e => e.id === entryId ? { ...e, posti: e.posti - 1 } : e));
     setBookings(prev => [...prev, {
       id: Date.now(),
       corsoNome: corso?.nome_corso || '',
@@ -1541,7 +1562,7 @@ export default function Index() {
 
     setBookingEntry(null);
     toast.success(
-      `Prenotazione confermata! Una notifica è stata inviata a ${email}`,
+      `Prenotazione confermata! Email inviata a ${email}`,
       { duration: 5000 }
     );
   };
